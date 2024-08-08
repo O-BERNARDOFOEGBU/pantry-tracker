@@ -1,0 +1,6 @@
+.backgroundImage {
+  background-image: url("../public/Pantry-Background.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
