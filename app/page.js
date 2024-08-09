@@ -216,14 +216,21 @@ const modalStyle = {
   gap: 3,
 };
 
+const recipeModalStyle = {
+  ...modalStyle,
+  width: 800, // Increase the width for the recipe modal
+};
+
 export default function Home() {
   const [inventory, setInventory] = useState([]);
+  const [recipeItems, setRecipeItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState("");
   const [openCameraModal, setOpenCameraModal] = useState(false);
   const [cameraStream, setCameraStream] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
   const videoRef = useRef(null);
+  const [openRecipe, setOpenRecipe] = useState(false);
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, "inventory"));
@@ -307,6 +314,12 @@ export default function Home() {
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const handleOpenRecipe = () => {
+    setRecipeItems(inventory.map((item) => item.name));
+    setOpenRecipe(true);
+  };
+  const handleCloseRecipe = () => setOpenRecipe(false);
 
   const handleCameraOpen = () => {
     setOpenCameraModal(true);
@@ -401,6 +414,8 @@ export default function Home() {
     }
   };
 
+  console.log(name);
+
   return (
     <Box
       className="backgroundImage"
@@ -479,7 +494,8 @@ export default function Home() {
               color: "#000",
             },
           }}
-          onClick={() => generateRecipe(inventory.map((item) => item.name))}
+          // onClick={() => generateRecipe(inventory.map((item) => item.name))}
+          onClick={handleOpenRecipe}
         >
           Generate Recipe
         </Button>
@@ -521,7 +537,11 @@ export default function Home() {
             <Typography variant="body1">{item.name}</Typography>
             <Typography variant="body1">{item.quantity}</Typography>
             <Stack direction={"row"} spacing={1}>
-              <IconButton onClick={() => addMoreOfAnItem(item.name)}>
+              <IconButton
+                onClick={
+                  (() => addMoreOfAnItem(item.name), console.log(item.name))
+                }
+              >
                 <AddIcon />
               </IconButton>
               <IconButton onClick={() => removeItem(item.name)}>
@@ -557,6 +577,94 @@ export default function Home() {
             }}
           >
             Add
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Modal for generated recipe */}
+      <Modal open={openRecipe} onClose={handleCloseRecipe}>
+        <Box sx={recipeModalStyle}>
+          <Typography
+            id="recipe-modal-title"
+            variant="h5"
+            component="h2"
+            fontWeight="bold"
+          >
+            Here is your Generated Recipe
+          </Typography>
+
+          <Typography variant="h6" component="h2">
+            Ingredients:
+          </Typography>
+
+          <Typography
+            id="recipe-modal-description"
+            variant="body1"
+            component="p"
+            sx={{ mb: 2 }}
+          >
+            {recipeItems.length > 0 ? (
+              recipeItems.map((item, index) => (
+                <span key={index}>
+                  - {item}
+                  <br />
+                </span>
+              ))
+            ) : (
+              <span>No ingredients available in the inventory.</span>
+            )}
+          </Typography>
+
+          <Typography variant="body1" component="p">
+            - 1 cup of (melon seeds) <br />
+            - 2 medium-sized Fish (e.g., catfish or tilapia) <br />
+            - 1 tablespoon of ground Pepper (or to taste) <br />
+            - 1 Salad Pack (for garnish or as a side dish) <br />
+            - 2 cups of Soup broth (chicken or beef stock) <br />
+          </Typography>
+
+          {recipeItems.length > 0 ? (
+            <div>
+              {" "}
+              <Typography variant="h6" component="h3" sx={{ mb: 1 }}>
+                Instructions:
+              </Typography>
+              <Typography variant="body1" component="p">
+                1. <strong>Prepare the Rice:</strong> In a dry skillet, lightly
+                toast the egusi seeds until they are golden brown.
+                <br />
+                2. <strong>Cook the Fish:</strong> Clean and season the fish
+                with salt, pepper, and any other desired seasonings.
+                <br />
+                3. <strong>Make the Egusi Soup:</strong> In the same pot, add
+                the ground egusi and stir continuously.
+                <br />
+                4. <strong>Add the Fish:</strong> Gently place the fried fish
+                into the pot, and let it simmer in the egusi soup for another
+                10-15 minutes.
+                <br />
+                5. <strong>Prepare the oat:</strong> In a separate pot, bring
+                water to a boil. 6. <strong>Serve:</strong> Serve the oat soup
+                hot, with a portion of bread on the side.
+              </Typography>{" "}
+            </div>
+          ) : (
+            <h5>Can't find items in your pantry!!!</h5>
+          )}
+
+          <Button
+            variant="contained"
+            sx={{
+              bgcolor: "#333",
+              color: "white",
+              "&:hover": {
+                background: "#FFF",
+                color: "#000",
+              },
+            }}
+            onClick={handleCloseRecipe}
+          >
+            close
           </Button>
         </Box>
       </Modal>
