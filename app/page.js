@@ -129,13 +129,40 @@ export default function Home() {
     }
   };
 
+  // const deleteItem = async (item) => {
+  //   const docRef = doc(collection(firestore, "inventory"), item);
+  //   const docSnap = await getDoc(docRef);
+  //   if (docSnap.exists()) {
+  //     await deleteDoc(docRef);
+  //   }
+  //   await updateInventory();
+  // };
+
   const deleteItem = async (item) => {
+    // Optimistically update the local state to remove the item
+    setInventory((prevInventory) =>
+      prevInventory.filter((i) => i.name !== item)
+    );
+
     const docRef = doc(collection(firestore, "inventory"), item);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      await deleteDoc(docRef);
+
+    try {
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        await deleteDoc(docRef);
+        console.log(`Item ${item} successfully deleted from inventory.`);
+      } else {
+        console.log(`Item ${item} does not exist in the inventory.`);
+      }
+    } catch (error) {
+      console.error(`Error deleting item ${item}:`, error);
+
+      // Revert the optimistic update if the delete operation fails
+      setInventory((prevInventory) => [...prevInventory, item]);
     }
-    await updateInventory();
+
+    await updateInventory(); // Update the inventory from the database
   };
 
   const handleOpen = () => setOpen(true);
@@ -353,11 +380,7 @@ export default function Home() {
             <Typography variant="body1">{item.name}</Typography>
             <Typography variant="body1">{item.quantity}</Typography>
             <Stack direction={"row"} spacing={1}>
-              <IconButton
-                onClick={
-                  (() => addMoreOfAnItem(item.name), console.log(item.name))
-                }
-              >
+              <IconButton onClick={() => addMoreOfAnItem(item.name)}>
                 <AddIcon />
               </IconButton>
               <IconButton onClick={() => removeItem(item.name)}>
