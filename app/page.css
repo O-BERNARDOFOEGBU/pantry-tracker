@@ -4,3 +4,10 @@
   background-position: center;
   background-repeat: no-repeat;
 }
+
+button:hover {
+  background: #000;
+  /* width: calc(100% + 2px); */
+  transition: 0.3s ease-in-out;
+  color: white;
+}

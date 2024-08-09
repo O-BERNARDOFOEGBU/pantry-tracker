@@ -175,6 +175,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import "@fontsource/permanent-marker";
 import "./page.css";
 import {
   Box,
@@ -183,7 +184,11 @@ import {
   Button,
   Modal,
   TextField,
+  IconButton,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import RemoveIcon from "@mui/icons-material/Remove";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { firestore } from "@/firebase";
 import {
   collection,
@@ -195,15 +200,16 @@ import {
   getDoc,
 } from "firebase/firestore";
 
-const style = {
+const modalStyle = {
   position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "white",
-  border: "2px solid #000",
-  boxShadow: 24,
+  border: "none",
+  borderRadius: "10px",
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
   p: 4,
   display: "flex",
   flexDirection: "column",
@@ -245,18 +251,7 @@ export default function Home() {
     await updateInventory();
   };
 
-  // const addMoreOfAnItem = async (item) => {
-  //   const docRef = doc(collection(firestore, "inventory"), item);
-  //   const docSnap = await getDoc(docRef);
-  //   if (docSnap.exists()) {
-  //     const { quantity } = docSnap.data();
-  //     await setDoc(docRef, { quantity: quantity + 1 });
-  //   }
-  //   await updateInventory();
-  // };
-
   const addMoreOfAnItem = async (item) => {
-    // Optimistically update the UI
     setInventory((prevInventory) =>
       prevInventory.map((i) =>
         i.name === item ? { ...i, quantity: i.quantity + 1 } : i
@@ -274,26 +269,10 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error adding more of an item:", error);
-      // Optionally: Rollback the optimistic UI update if needed
     }
   };
 
-  // const removeItem = async (item) => {
-  //   const docRef = doc(collection(firestore, "inventory"), item);
-  //   const docSnap = await getDoc(docRef);
-  //   if (docSnap.exists()) {
-  //     const { quantity } = docSnap.data();
-  //     if (quantity === 1) {
-  //       await deleteDoc(docRef);
-  //     } else {
-  //       await setDoc(docRef, { quantity: quantity - 1 });
-  //     }
-  //   }
-  //   await updateInventory();
-  // };
-
   const removeItem = async (item) => {
-    // Optimistically update the UI by filtering out the item if quantity reaches zero
     setInventory((prevInventory) =>
       prevInventory
         .map((i) => (i.name === item ? { ...i, quantity: i.quantity - 1 } : i))
@@ -307,14 +286,13 @@ export default function Home() {
       if (docSnap.exists()) {
         const { quantity } = docSnap.data();
         if (quantity === 1) {
-          await deleteDoc(docRef); // Delete the document if quantity is 1
+          await deleteDoc(docRef);
         } else {
-          await setDoc(docRef, { quantity: quantity - 1 }); // Decrease the quantity by 1
+          await setDoc(docRef, { quantity: quantity - 1 });
         }
       }
     } catch (error) {
       console.error("Error removing item:", error);
-      // Optionally: Rollback the optimistic UI update if needed
     }
   };
 
@@ -322,10 +300,7 @@ export default function Home() {
     const docRef = doc(collection(firestore, "inventory"), item);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      if (quantity > 1) {
-        await deleteDoc(docRef);
-      }
+      await deleteDoc(docRef);
     }
     await updateInventory();
   };
@@ -377,7 +352,7 @@ export default function Home() {
     });
 
     const data = await response.json();
-    return data.result; // Assuming the API returns the identified item name.
+    return data.result;
   };
 
   const addItemFromImage = async () => {
@@ -386,30 +361,6 @@ export default function Home() {
       await addItem(itemName);
     }
   };
-
-  // const generateRecipe = async (inventoryItems) => {
-  //   const prompt = `Here are some items I have: ${inventoryItems?.join(
-  //     ", "
-  //   )}. Can you suggest a recipe?`;
-
-  //   const response = await fetch(
-  //     "https://api.openai.com/v1/engines/davinci-codex/completions",
-  //     {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-  //       },
-  //       body: JSON.stringify({
-  //         prompt: prompt,
-  //         max_tokens: 100,
-  //       }),
-  //     }
-  //   );
-
-  //   const data = await response.json();
-  //   return data?.choices[0]?.text.trim();
-  // };
 
   const generateRecipe = async (inventoryItems) => {
     if (!inventoryItems || inventoryItems.length === 0) {
@@ -460,136 +411,172 @@ export default function Home() {
       flexDirection={"column"}
       alignItems={"center"}
       gap={2}
+      bgcolor={"#f5f5f5"}
     >
-      <Modal
-        open={open}
-        onClose={handleClose}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
+      <Typography
+        variant="h3"
+        component="h1"
+        sx={{
+          alignSelf: "center",
+          mt: 8,
+          mb: 4,
+          color: "#33F020",
+          fontFamily: "'Permanent Marker', cursive",
+          fontWeight: "bold",
+        }}
       >
-        <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            Add Item
-          </Typography>
-          <Stack width="100%" direction={"row"} spacing={2}>
-            <TextField
-              id="outlined-basic"
-              label="Item"
-              variant="outlined"
-              fullWidth
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-            />
-            <Button
-              variant="outlined"
-              onClick={() => {
-                addItem(itemName);
-                setItemName("");
-                handleClose();
-              }}
-            >
-              Add
-            </Button>
-          </Stack>
-        </Box>
-      </Modal>
-
-      <Modal
-        open={openCameraModal}
-        onClose={handleCameraClose}
-        aria-labelledby="camera-modal-title"
-        aria-describedby="camera-modal-description"
-      >
-        <Box sx={style}>
-          <Typography id="camera-modal-title" variant="h6" component="h2">
-            Capture Image
-          </Typography>
-          <video
-            ref={videoRef}
-            autoPlay
-            style={{ width: "100%", height: "auto" }}
-          ></video>
-          <Button variant="outlined" onClick={captureImage}>
-            Capture
-          </Button>
-        </Box>
-      </Modal>
+        {`Welcome, Pantry Tracking made easy 😍 !`}
+      </Typography>
 
       <Stack
-        width="800px"
-        // height="100px"
-        bgcolor={"transparent"}
-        display={"flex"}
-        flexDirection={"row"}
-        justifyContent={"space-around"}
-        // alignItems={"center"}
+        direction={"row"}
+        justifyContent={"center"}
+        alignItems={"center"}
+        gap={2}
+        width={"65vw"}
+        sx={{
+          bgcolor: "hsla(0, 0%, 100%, 0.5)",
+          p: 3,
+          borderRadius: "20px",
+          boxShadow: 2,
+        }}
       >
-        <Button variant="contained" onClick={handleOpen}>
-          Add New Item
-        </Button>
-        <Button variant="contained" onClick={handleCameraOpen}>
-          Add Item via Camera
+        <Button
+          variant="contained"
+          sx={{
+            bgcolor: "#333",
+            color: "white",
+            "&:hover": {
+              background: "#FFF",
+              color: "#000",
+            },
+          }}
+          onClick={handleOpen}
+        >
+          Add Item
         </Button>
         <Button
           variant="contained"
-          onClick={async () => {
-            const recipe = await generateRecipe(
-              inventory.map((item) => item.name)
-            );
-            if (recipe) {
-              alert(`Here’s a recipe you can make:\n${recipe}`);
-            }
+          sx={{
+            bgcolor: "#333",
+            color: "white",
+            "&:hover": {
+              background: "#FFF",
+              color: "#000",
+            },
           }}
+          onClick={handleCameraOpen}
+        >
+          Identify & Add Item
+        </Button>
+        <Button
+          variant="contained"
+          sx={{
+            bgcolor: "#333",
+            color: "white",
+            "&:hover": {
+              background: "#FFF",
+              color: "#000",
+            },
+          }}
+          onClick={() => generateRecipe(inventory.map((item) => item.name))}
         >
           Generate Recipe
         </Button>
       </Stack>
 
-      <Box border={"1px thin #eff"}>
-        <Box
-          width="800px"
-          height="100px"
-          bgcolor={"#ADD8E6"}
-          display={"flex"}
-          justifyContent={"center"}
-          alignItems={"center"}
-        >
-          <Typography variant={"h2"} color={"#333"} textAlign={"center"}>
-            Inventory Items
+      {/* <Typography
+        variant="h5"
+        component="h2"
+        sx={{ mt: 2, mb: 1, color: "#FEF" }}
+      >
+        Pantry Items
+      </Typography> */}
+
+      <Stack
+        sx={{
+          width: "65vw",
+          height: "55vh",
+          overflowY: "auto",
+          borderRadius: "20px",
+          boxShadow: 2,
+          bgcolor: "00FFFFFF",
+        }}
+        p={2}
+        gap={2}
+      >
+        {inventory.map((item) => (
+          <Stack
+            key={item.name}
+            direction={"row"}
+            justifyContent={"space-between"}
+            alignItems={"center"}
+            p={2}
+            sx={{
+              bgcolor: "hsla(0, 0%, 100%, 0.5)",
+              borderRadius: "10px",
+              boxShadow: 1,
+            }}
+          >
+            <Typography variant="body1">{item.name}</Typography>
+            <Typography variant="body1">{item.quantity}</Typography>
+            <Stack direction={"row"} spacing={1}>
+              <IconButton onClick={() => addMoreOfAnItem(item.name)}>
+                <AddIcon />
+              </IconButton>
+              <IconButton onClick={() => removeItem(item.name)}>
+                <RemoveIcon />
+              </IconButton>
+              <IconButton onClick={() => deleteItem(item.name)}>
+                <DeleteIcon />
+              </IconButton>
+            </Stack>
+          </Stack>
+        ))}
+      </Stack>
+
+      {/* Modal for adding new item */}
+      <Modal open={open} onClose={handleClose}>
+        <Box sx={modalStyle}>
+          <Typography variant="h6" component="h2">
+            Add New Item
           </Typography>
+          <TextField
+            label="Item Name"
+            value={itemName}
+            onChange={(e) => setItemName(e.target.value)}
+            fullWidth
+          />
+          <Button
+            variant="contained"
+            sx={{ bgcolor: "#333", color: "white" }}
+            onClick={() => {
+              addItem(itemName);
+              handleClose();
+              setItemName("");
+            }}
+          >
+            Add
+          </Button>
         </Box>
-        <Stack width="800px" height="300px" spacing={2} overflow={"auto"}>
-          {inventory.map(({ name, quantity }) => (
-            <Box
-              key={name}
-              width="100%"
-              minHeight="100px"
-              display={"flex"}
-              justifyContent={"space-between"}
-              alignItems={"center"}
-              bgcolor={"#f0f0f0"}
-              paddingX={5}
-            >
-              <Typography variant={"h5"} color={"#333"} textAlign={"center"}>
-                {name.charAt(0).toUpperCase() + name.slice(1)}
-              </Typography>
-              <Typography variant={"h5"} color={"#333"} textAlign={"center"}>
-                Quantity: {quantity}
-              </Typography>
-              <Button variant="contained" onClick={() => addMoreOfAnItem(name)}>
-                add
-              </Button>
-              <Button variant="contained" onClick={() => removeItem(name)}>
-                Remove
-              </Button>
-              <Button variant="contained" onClick={() => deleteItem(name)}>
-                Delete
-              </Button>
-            </Box>
-          ))}
-        </Stack>
-      </Box>
+      </Modal>
+
+      {/* Camera modal */}
+      <Modal open={openCameraModal} onClose={handleCameraClose}>
+        <Box sx={modalStyle}>
+          <Typography variant="h6" component="h2">
+            Capture Item Image
+          </Typography>
+          <video ref={videoRef} autoPlay style={{ width: "100%" }} />
+          <Button
+            variant="contained"
+            sx={{ bgcolor: "#333", color: "white" }}
+            onClick={captureImage}
+          >
+            Capture & Identify
+          </Button>
+        </Box>
+      </Modal>
     </Box>
-    // </Box>
   );
 }
